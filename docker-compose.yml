@@ -1,0 +1,71 @@
+services:
+  digging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Set to "metrics" to enable, leave empty to disable
+        FEATURES: "${FEATURES:-}"
+    image: digging:latest
+    container_name: digging
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    environment:
+      - BIND_ADDRESS=${BIND_ADDRESS:-0.0.0.0:3000}
+      - RUST_LOG=${RUST_LOG:-digging=debug,tower_http=debug}
+      # Uncomment below when you set up OTLP exporter for metrics
+      # - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      # - OTEL_EXPORTER_OTLP_HEADERS=${OTEL_EXPORTER_OTLP_HEADERS:-}
+      # - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-digging}
+    restart: unless-stopped
+    # Uncomment for production health checks
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+    #   interval: 30s
+    #   timeout: 3s
+    #   retries: 3
+    #   start_period: 40s
+
+  # Uncomment below to add observability stack (Prometheus + Grafana)
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus-data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #   restart: unless-stopped
+
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: grafana
+  #   ports:
+  #     - "3001:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - prometheus
+
+  # Uncomment below to add OpenTelemetry Collector
+  # otel-collector:
+  #   image: otel/opentelemetry-collector-contrib:latest
+  #   container_name: otel-collector
+  #   ports:
+  #     - "4317:4317"   # OTLP gRPC receiver
+  #     - "4318:4318"   # OTLP HTTP receiver
+  #     - "8889:8889"   # Prometheus metrics exporter
+  #   volumes:
+  #     - ./otel-collector-config.yml:/etc/otel-collector-config.yml:ro
+  #   command: ["--config=/etc/otel-collector-config.yml"]
+  #   restart: unless-stopped
+
+# volumes:
+#   prometheus-data:
+#   grafana-data:
