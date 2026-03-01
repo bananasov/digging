@@ -1,5 +1,6 @@
-# Stage 1: Plan dependencies
-FROM lukemathwalker/cargo-chef:latest-rust-nightly AS chef
+# Stage 1: Install cargo-chef on nightly Rust
+FROM rustlang/rust:nightly AS chef
+RUN cargo install --locked cargo-chef
 WORKDIR /app
 
 FROM chef AS planner
@@ -12,17 +13,17 @@ ARG FEATURES=""
 COPY --from=planner /app/recipe.json recipe.json
 # Build dependencies - this layer is cached!
 RUN if [ -n "$FEATURES" ]; then \
-      cargo +nightly chef cook --release --features "$FEATURES" --recipe-path recipe.json; \
+      cargo chef cook --release --features "$FEATURES" --recipe-path recipe.json; \
     else \
-      cargo +nightly chef cook --release --recipe-path recipe.json; \
+      cargo chef cook --release --recipe-path recipe.json; \
     fi
 
 # Build application
 COPY . .
 RUN if [ -n "$FEATURES" ]; then \
-      cargo +nightly build --release --features "$FEATURES" --bin digging; \
+      cargo build --release --features "$FEATURES" --bin digging; \
     else \
-      cargo +nightly build --release --bin digging; \
+      cargo build --release --bin digging; \
     fi
 
 # Stage 3: Runtime
